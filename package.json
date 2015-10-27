@@ -1,0 +1,26 @@
+{
+  "name": "url-combo",
+  "version": "1.0.0",
+  "description": "url combo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/obingo/url-combo.git"
+  },
+  "keywords": [
+    "url",
+    "combo"
+  ],
+  "author": "xsbchen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/obingo/url-combo/issues"
+  },
+  "homepage": "https://github.com/obingo/url-combo#readme",
+  "dependencies": {
+    "lodash": "^3.10.1"
+  }
+}
