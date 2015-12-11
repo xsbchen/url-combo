@@ -42,7 +42,7 @@ function parseAttributes(attrStr) {
     var match;
 
     if (attrStr) {
-        while(match = reAttributes.exec(attrStr)) {
+        while (match = reAttributes.exec(attrStr)) {
             result[match[1]] = match[2] || true;
         }
     }
@@ -60,7 +60,7 @@ function getTags(rawHtml, reTag) {
     var result = [];
     var match, attributes;
 
-    while(match = reTag.exec(rawHtml)) {
+    while (match = reTag.exec(rawHtml)) {
         attributes = parseAttributes(match[2] || '');
 
         result.push({name: match[1], attributes: attributes, raw: match[0]});
@@ -76,8 +76,8 @@ function getTags(rawHtml, reTag) {
  * @returns {Object}
  */
 function groupTags(tags, key) {
-  var groupBy = 'data-combo';
-    return tags.reduce(function(previous, current) {
+    var groupBy = 'data-combo';
+    return tags.reduce(function (previous, current) {
         var combineName = current.attributes[groupBy];
         var keyValue = current.attributes[key];
 
@@ -96,7 +96,11 @@ function groupTags(tags, key) {
 
         return previous;
     }, {});
-};
+}
+
+function urlParse(url) {
+    var idx = url.indexOf('//');
+}
 
 /**
  * Combo Class
@@ -104,14 +108,15 @@ function groupTags(tags, key) {
  * @constructor
  */
 function Combo(options) {
-  this.options = _.extend({
-    basePath: '/c/=',
-    separator: ',',
-    selectors: {
-      script: /<(script)([^>]*)>((?:.|\r\n)*?)<\/script>/g,
-      link: /<(link)([^>]*?)\/?>/g
-    }
-  }, options);
+    this.options = _.extend({
+        domain: 'imgcache.gtimg.cn',
+        basePath: '/c/=',
+        separator: ',',
+        selectors: {
+            script: /<(script)([^>]*)>((?:.|\r\n)*?)<\/script>/g,
+            link: /<(link)([^>]*?)\/?>/g
+        }
+    }, options);
 }
 
 /**
@@ -123,37 +128,39 @@ function Combo(options) {
  * @private
  */
 Combo.prototype._generateCombinedTag = function _generateCombinedTag(type, files, attributes) {
-  var attrStr = [];
-  var filesMaxIdx = files.length - 1;
+    var attrStr = [];
+    var filesMaxIdx = files.length - 1;
 
-  attributes = _.extend(true, {}, attributes);
-  delete attributes.src;
-  delete attributes.href;
+    delete attributes.src;
+    delete attributes.href;
 
-  if (filesMaxIdx === 0) {
-    files[0] = files[0].split('?')[0];
-  } else {
-    var combineUrlTmpl = '//$host$' + this.options.basePath  + '$pathname$';
-    files = files.map(function(file, idx) {
-      if (file.indexOf('//') === 0) {
-        file = 'http:' + file;
-      }
+    if (filesMaxIdx === 0) {
+        files[0] = files[0].split('?')[0];
+    } else {
+        var combineUrlTmpl = '//$host$' + this.options.basePath + '$pathname$';
+        files = files.map(function (file, idx) {
+            if (file.indexOf('//') === 0) {
+                file = 'http:' + file;
+            }
 
-      var urlParts = url.parse(file);
+            var urlParts = url.parse(file);
 
-      if (idx === 0) {
-        return parseTmpl(combineUrlTmpl, urlParts);
-      }
+            if (idx === 0) {
+                return parseTmpl(combineUrlTmpl, urlParts);
+            }
 
-      return urlParts.pathname;
+            return urlParts.pathname;
+        });
+    }
+
+    for (var attrName in attributes) {
+        attrStr.push(attrName + '="' + attributes[attrName] + '"');
+    }
+
+    return parseTmpl(templates[type], {
+        src: encodeURI(files.join(this.options.separator)),
+        attributes: attrStr.join(' ')
     });
-  }
-
-  for (var attrName in attributes) {
-    attrStr.push(attrName + '="' + attributes[attrName] + '"');
-  }
-
-  return parseTmpl(templates[type], {src: encodeURI(files.join(this.options.separator)), attributes: attrStr.join(' ')});
 };
 
 /**
@@ -165,27 +172,27 @@ Combo.prototype._generateCombinedTag = function _generateCombinedTag(type, files
  * @private
  */
 Combo.prototype._processTags = function _processTags(rawHtml, type, key) {
-  var allMatchTags = getTags(rawHtml, this.options.selectors[type]);
-  var tagsGroup = groupTags(allMatchTags, key);
-  var placeholder = '__$COMBINE$__';
+    var allMatchTags = getTags(rawHtml, this.options.selectors[type]);
+    var tagsGroup = groupTags(allMatchTags, key);
+    var placeholder = '__$COMBINE$__';
 
-  for (var combineName in tagsGroup) {
-    var tags = tagsGroup[combineName];
-    var tagsMaxIdx = tags.length - 1;
-    var files = [];
-    var attributes = {};
+    for (var combineName in tagsGroup) {
+        var tags = tagsGroup[combineName];
+        var tagsMaxIdx = tags.length - 1;
+        var files = [];
+        var attributes = {};
 
-    tags.forEach(function(tag, idx) {
-      files.push(tag.attributes[key]);
-      _.extend(attributes, tag.attributes);
+        tags.forEach(function (tag, idx) {
+            files.push(tag.attributes[key]);
+            _.extend(attributes, tag.attributes);
 
-      rawHtml = rawHtml.replace(tag.raw, idx < tagsMaxIdx ? '' : placeholder);
-    });
+            rawHtml = rawHtml.replace(tag.raw, idx < tagsMaxIdx ? '' : placeholder);
+        });
 
-    rawHtml = rawHtml.replace(placeholder, this._generateCombinedTag(type, files, attributes));
-  }
+        rawHtml = rawHtml.replace(placeholder, this._generateCombinedTag(type, files, attributes));
+    }
 
-  return rawHtml;
+    return rawHtml;
 };
 
 /**
@@ -194,9 +201,9 @@ Combo.prototype._processTags = function _processTags(rawHtml, type, key) {
  * @returns {*}
  */
 Combo.prototype.process = function combine(content) {
-  content = this._processTags(content, 'script', 'src');
-  content = this._processTags(content, 'link', 'href');
-  return content;
+    content = this._processTags(content, 'script', 'src');
+    content = this._processTags(content, 'link', 'href');
+    return content;
 };
 
 module.exports = Combo;
