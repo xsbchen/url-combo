@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/obingo/url-combo.git"
+    "url": "git+https://github.com/xsbchen/url-combo.git"
   },
   "keywords": [
     "url",
@@ -17,9 +17,9 @@
   "author": "xsbchen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/obingo/url-combo/issues"
+    "url": "https://github.com/xsbchen/url-combo/issues"
   },
-  "homepage": "https://github.com/obingo/url-combo#readme",
+  "homepage": "https://github.com/xsbchen/url-combo#readme",
   "dependencies": {
     "lodash": "^3.10.1"
   }
