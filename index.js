@@ -130,6 +130,7 @@ function Combo(options) {
 Combo.prototype._generateCombinedTag = function _generateCombinedTag(type, files, attributes) {
     var attrStr = [];
     var filesMaxIdx = files.length - 1;
+    var self = this
 
     delete attributes.src;
     delete attributes.href;
@@ -138,6 +139,7 @@ Combo.prototype._generateCombinedTag = function _generateCombinedTag(type, files
         files[0] = files[0].split('?')[0];
     } else {
         var combineUrlTmpl = '//$host$' + this.options.basePath + '$pathname$';
+        var combineHead = ''
         files = files.map(function (file, idx) {
             if (file.indexOf('//') === 0) {
                 file = 'http:' + file;
@@ -146,6 +148,7 @@ Combo.prototype._generateCombinedTag = function _generateCombinedTag(type, files
             var urlParts = url.parse(file);
 
             if (idx === 0) {
+                combineHead = parseTmpl('//$host$' + self.options.basePath, urlParts)
                 return parseTmpl(combineUrlTmpl, urlParts);
             }
 
@@ -157,10 +160,39 @@ Combo.prototype._generateCombinedTag = function _generateCombinedTag(type, files
         attrStr.push(attrName + '="' + attributes[attrName] + '"');
     }
 
-    return parseTmpl(templates[type], {
-        src: encodeURI(files.join(this.options.separator)),
-        attributes: attrStr.join(' ')
-    });
+    if (this.options.maxlength) {
+        var resultList = []
+        files.reduce(function (prev, curr, index) {
+          if (encodeURI(prev + self.options.separator + curr).length > self.options.maxlength) {
+            resultList.push(parseTmpl(templates[type], {
+              src: encodeURI(prev),
+              attributes: attrStr.join(' ')
+            }))
+            if (index == files.length - 1) {
+              resultList.push(parseTmpl(templates[type], {
+                src: encodeURI(combineHead + curr),
+                attributes: attrStr.join(' ')
+              }))
+            }
+            return combineHead + curr
+          } else {
+            if (index == files.length - 1) {
+              resultList.push(parseTmpl(templates[type], {
+                src: encodeURI(prev + self.options.separator + curr),
+                attributes: attrStr.join(' ')
+              }))
+            }
+            return prev + self.options.separator + curr
+          }
+        })
+
+        return resultList.join('\n')
+    } else {
+        return parseTmpl(templates[type], {
+            src: encodeURI(files.join(this.options.separator)),
+            attributes: attrStr.join(' ')
+        });
+    }
 };
 
 /**
