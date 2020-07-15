@@ -21,6 +21,6 @@
   },
   "homepage": "https://github.com/xsbchen/url-combo#readme",
   "dependencies": {
-    "lodash": "^3.10.1"
+    "lodash": "^4.17.19"
   }
 }
